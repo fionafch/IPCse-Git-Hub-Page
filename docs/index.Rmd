@@ -2,7 +2,7 @@
 title: "INDICE DE PRECIOS AL CONSUMIDOR SIN ESTACIONALIDAD (IPCse)"
 author: "Martin Gonzalez-Rozada"
 date: "Diciembre 2022"
-output: rmdformats::downcute
+output: html_document
 ---
 
 <style>
@@ -118,7 +118,7 @@ fg1$Region <- fct_relevel(fg1$Region, c("Patagonia", "Cuyo", "Noreste", "Noroest
 
 g1 <- ggplot(fg1, aes(x=Region, y=Variacion, fill=Serie)) +
   geom_bar(stat="identity", width = 0.5, position = "dodge") +
-  scale_fill_manual(values=c("#111C7F","#CB2B00")) +
+  scale_fill_manual(values=c("#111C7F","#9F2042")) +
   labs(y = "Variación porcentual",
        x = "") +
   coord_flip() 
@@ -146,7 +146,7 @@ fg2$Division <- fct_relevel(fg2$Division,c("Bienes y servicios varios", "Restaur
 
 g2 <- ggplot(fg2, aes(x=Division, y=Variacion, fill=Serie)) +
   geom_bar(stat="identity", width = 0.5, position = "dodge") +
-  scale_fill_manual(values=c("#111C7F","#CB2B00")) +
+  scale_fill_manual(values=c("#111C7F","#9F2042")) +
   labs(y = "Variación porcentual",
        x = "") +
   coord_flip() 
