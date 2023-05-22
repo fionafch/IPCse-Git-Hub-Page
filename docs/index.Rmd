@@ -1,9 +1,10 @@
 ---
 title: "INDICE DE PRECIOS AL CONSUMIDOR SIN ESTACIONALIDAD (IPCse)"
-author: "Martin Gonzalez-Rozada"
-date: "Diciembre 2022"
-output: html_document
+author: "Martin Gonzalez-Rozada. <br> Director de la Maestría en Econometría del Departamento de Economía de la [Universidad Torcuato Di Tella](https://www.utdt.edu/)."
+date: "Abril 2023"
+output: rmdformats::downcute
 ---
+
 
 <style>
 p {
@@ -27,31 +28,51 @@ library(kableExtra)
 library(plotly)
 library(knitr)
 library(readxl)
+library(ggpmisc)
+library("ggh4x")
 
-yearactual <- 2022
-
+# Falta automatizar headers cuadro 1
 ```
-
-## RESULTADOS
-
-**El Índice de Precios al Consumidor nacional sin estacionalidad (IPCse) aumentó un 5.4 por ciento en diciembre, luego de haber aumentado también un 5.4 por ciento en noviembre.**<br>
-
-En diciembre los factores estacionales ayudaron a que la medición oficial de la inflación fuera 0.3 puntos porcentuales menor que sin estacionalidad. Durante los últimos 12 meses, el índice aumentó un 94.8 por ciento antes del ajuste estacional (datos oficiales de INDEC).<br>
-
-Durante diciembre, salvo en la región noreste, en las cinco regiones restantes la estacionalidad hizo que la medición oficial fuera de entre 0.1 y 0.4 puntos porcentuales menor al índice sin estacionalidad.En la región noreste la estacionalidad hizo que el dato oficial fuera 0.2 puntos porcentuales más grande que sin estacionalidad (Figura 1).<br>
-
-**Los índices de precios de bebidas alcohólicas y tabaco y de restaurantes y hoteles fueron, con diferencia, los que más aumentaron en el mes.** En un segundo escalón estuvieron los incrementos en equipamiento y mantenimiento del hogar y educación. Los índices de precios de alimentos y bebidas no alcohólicas; vivienda, agua, electricidad, gas y otros combustibles; comunicación y recreación y cultura aumentaros por debajo del nivel general desestacionalizado (Cuadro 1).<br>
-
-La estacionalidad contribuyó a que el índice oficial de la división de prendas de vestir y calzado fuera 1.1 puntos porcentuales menor a lo que hubiera dado la inflación del mismo índice ajustado por estacionalidad. En el caso del índice de precios de la división de educación la estacionalidad también hizo que el valor oficial fuera menor, 2.5 puntos porcentuales, a la inflación que se hubiera producido sin estacionalidad. El impacto estacional tuvo el efecto contrario en el índice de precios de la división de comunicación donde el valor oficial fue 0.7 puntos porcentuales más alto de lo que hubiera sido sin estacionalidad. En términos interanuales, antes del ajuste estacional, los índices de precios de la división de prendas de vestir y calzado y restaurantes y hoteles se incrementaron más del 100 por ciento (Figura 2).<br>
-
-**La contribución más importante al dato del nivel general del IPCse de diciembre la hizo el índice de precios de la división alimentos y bebidas no alcohólicas explicando 1.37 puntos porcentuales del 5.4 por ciento de inflación.** Prendas de vestir y calzado con 0.61 puntos porcentuales, transporte con 0.66 y restaurantes y hoteles con 0.67 puntos porcentuales fueron las otras divisiones importantes en el aumento del nivel general de precios sin estacionalidad. El índice de precios de la división alimentos y bebidas no alcohólicas contribuyó en más de 1 punto porcentual en todas las regiones del país excepto en la región de Cuyo dónde la mayor contribución a la inflación de diciembre de esa región fue el transporte (Cuadro 2).<br>
-
-**En la comparación interanual, diciembre de 2022 contra diciembre de 2021 antes del ajuste estacional, más del 50 por ciento del aumento de 94.8 por ciento está explicado por los índices de precios de tres de las divisiones de la canasta: alimentos y bebidas no alcohólicas, prendas de vestir y calzado y transporte.** Salud con una incidencia interanual de 8 puntos porcentuales y restaurantes y hoteles con una contribución de casi 7 puntos porcentuales son las divisiones que le siguen en explicación del aumento interanual del nivel general de precios (Cuadro 2).<br> 
-
-**En diciembre, la inflación subyacente, definida como el cambio porcentual en el nivel general del IPCse menos el efecto de los índices de precios de las divisiones de la canasta que incluyen bienes y servicios regulados o con alto componente impositivo, fue de 5.4 por ciento después de haber aumentado un 5 por ciento en noviembre.**  El valor de diciembre fue impulsado por la región del GBA. En términos interanuales, antes del ajuste estacional, la inflación subyacente en las regiones de GBA y patagónica superaron el 100 por ciento (Cuadro 1).
 
 
 ```{r excel, message=FALSE,echo=FALSE}
+# Importo los datos:
+
+## Importo fecha: yearactual=anio del informe, mesactual=mes del informe
+
+# C:/Users/fiona/Dropbox/MGR/IPC seasonal adjustment/IPCse
+# C:/Users/fiona/Dropbox/MGR/IPC seasonal adjustment/IPCse 
+# "C:/Users/mrozada/Dropbox/Personal Stuff/IPC seasonal adjustment/IPCse/IPCse.xlsx"
+# "C:/Users/mrozada/Dropbox/Personal Stuff/IPC seasonal adjustment/Ponderadores/Tables/IPCse por quintiles.xlsx"
+
+
+year_t <- as.numeric(read_excel("./IPCse.xlsx", 
+    sheet = "Cuadro1", range = "c4", col_names = FALSE))
+
+mes_t <- as.numeric(read_excel("./IPCse.xlsx", 
+    sheet = "Cuadro1", range = "k4", col_names = FALSE))
+
+mes_tm1 <- as.numeric(read_excel("./IPCse.xlsx", 
+    sheet = "Cuadro1", range = "j4", col_names = FALSE))
+
+if(mes_t - mes_tm1 == 1){
+  year_tm1 <- year_t
+} else if (mes_t - mes_tm1 == -11){
+  year_tm1 <- year_t-1
+} else {
+  year_tm1 <- "ERROR EN EL ANIO DEL MES PREVIO" 
+}
+
+year_tm12 <- year_t - 1
+
+meses <- read_excel("./IPCse.xlsx", 
+    sheet = "Cuadro1", range = "r15:r26", 
+    col_names = FALSE)
+
+mes_t_abrev <- paste0(str_to_title(substr(meses[mes_t,1],1,3),"."))
+text_mes_yoy <-  paste(mes_t_abrev,year_t,"/",mes_t_abrev,year_tm12)
+
+## Importo el cuadro 1
 
 cuadro1 <- read_excel("./IPCse.xlsx", 
                       sheet = "Cuadro1", range = "E47:L74", 
@@ -60,19 +81,158 @@ colnames1 <- colnames(cuadro1)
 colnames1[1] <- " "
 colnames(cuadro1) <- colnames1
 
+## Importo el cuadro 2
 
-cuadro2 <- read_excel("IPCse.xlsx", 
+cuadro2 <- read_excel("./IPCse.xlsx", 
                       sheet = "Cuadro2", 
                       range = "D13:K46")
 
-figura1 <- read_excel("IPCse.xlsx", 
+## Importo los datos de figura 1: tasa mensual por region
+
+figura1 <- read_excel("./IPCse.xlsx", 
                       sheet = "Figura1", 
                       range = "D47:G61")
 
-figura2 <- read_excel("IPCse.xlsx", 
+## Importo los datos de figura 2: tasa mensual por division
+
+figura2 <- read_excel("./IPCse.xlsx", 
                       sheet = "Figura1", 
                       range = "D63:F87")
+
+## Importo los datos de figura 3: tasa mensual serie de tiempo
+figura3 <- read_excel("./IPCse.xlsx", 
+                      sheet = "LinePlot", 
+                      range = "A1:C2000")
+library(tsbox)
+figura3long <- figura3 %>%
+  na.omit() %>%
+  ts_long() %>%
+  rename(Serie = id) %>%
+  rename(Tasa = value)
+library(tsbox) # la saco porque sino me reutiliza otra funcion que me sirve
+
+## Importo los datos de la figura 4: tasa interanual q1-q5
+figura4 <- read_excel("./IPCse por quintiles.xlsx", 
+                      sheet = "Para R", 
+                      range = "B4:C2000")
+
+
+# Importo datos cuadro 3 a
+
+## Importo los datos del cuadro3a: tasas q1 a q5
+cuadro3se <- read_excel("./IPCse por quintiles.xlsx", 
+                      sheet = "Para R", 
+                      range = "G4:J9")
+
+## Importo los datos del cuadro3b: tasas q1 a q5
+cuadro4 <- read_excel("./IPC por quintiles.xlsx", 
+                      sheet = "Para R", 
+                      range = "E5:H10")
+
+
+
+## Importo los datos del cuadro 4: diferencia incidencias q1-q5
+cuadro_dif_inc_q1q5 <- read_excel("./IPCse por quintiles.xlsx", 
+                      sheet = "Para R", 
+                      range = "N4:P17")
+
+
+## Importo los datos de la figura 5 : tasas q1 a q5 ultimo año 
+figuraq1aq5year <- read_excel("./IPC por quintiles.xlsx", 
+                      sheet = "Para R", 
+                      range = "K5:M70")
+
+
 ```
+
+
+```{r datos_figuras, message=FALSE,echo=FALSE}
+
+# Figura: inflacion mensual por regiones 
+fg1 <- figura1 %>%
+  mutate_if(is.numeric, ~round(.,2)) %>%
+  rename(Variacion2 = Dato) %>%
+  mutate(Variacion = round(Variacion2,1))
+
+
+fg1$Region <- fct_relevel(fg1$Region, c("Patagonia", "Cuyo", "Noreste", "Noroeste", "Pampeana" ,"GBA","Nacional"))
+
+fg1t <- fg1 %>%
+  select(Serie, Region, Variacion) %>%
+  pivot_wider(
+    names_from = Serie,
+    values_from = Variacion
+  ) 
+
+
+# Figura: inflacion mensual por divisiones
+fg2 <- figura2 %>%
+  mutate_if(is.numeric, ~round(.,1)) %>%
+  rename(Variacion = Dato)
+
+fg2$Division <- fct_relevel(fg2$Division,c("Bienes y servicios varios", "Restaurantes y hoteles", "Educación", "Recreación y cultura", "Comunicación", "Transporte", "Salud", "Equipamiento y mantenimiento del hogar", "Vivienda, agua, electricidad, gas y otros combustibles", "Prendas de vestir y calzado", "Bebidas alcohólicas y tabaco", "Alimentos y bebidas no alcohólicas"))
+
+
+# Figura: inflacion mensual serie de tiempo 
+fg3 <- figura3long %>%
+  mutate_if(is.numeric, ~round(.,2)) 
+  
+
+fg3t <- figura3 %>%
+  na.omit() %>%
+  tail(n=1) %>%
+  mutate_if(is.numeric, ~sprintf("%.1f",round(.,1)))
+
+
+# Figura 4: diferencia de inflacion interanual entre quintil 1 y quintil 5
+colnames(figura4) <- c("Fecha","Serie")
+figura4 <- figura4 %>%
+  na.omit() %>%
+  mutate(Serie=Serie*100) %>%
+  mutate_if(is.numeric, ~round(.,2))
+
+# Cuadro 3: Inflacion por quintil
+colnames(cuadro3se[,1]) <- " " 
+
+# Cuadro 3: Inflacion por quintil
+colnames(cuadro4[,1]) <- " " 
+
+
+fgqy <- figuraq1aq5year %>%
+  mutate_if(is.numeric, ~round(.,2)) 
+  
+
+```
+
+
+```{r parrafos,message=FALSE,echo=FALSE}
+dif_indec_ipcse <- round(as.numeric(fg3t[2])-as.numeric(fg3t[3]),1)
+text1 <- if(sign(dif_indec_ipcse)==-1){(paste(abs(dif_indec_ipcse),"puntos porcentuales menor ",sep=" "))} else if(sign(dif_indec_ipcse)==1){(paste(abs(dif_indec_ipcse),"punto porcentual mayor",sep=" "))} else {("igual ")}
+```  
+
+
+## RESULTADOS
+
+
+### Inflación sin estacionalidad
+
+**El Índice de Precios al Consumidor nacional sin estacionalidad (IPCse) aumentó un `r cuadro1[2,7]` por ciento en `r meses[mes_t,1]`, luego de haber aumentado un `r cuadro1[2,6]` por ciento en `r meses[mes_tm1,1]`.** <br>
+
+En `r meses[mes_t,1]` los factores estacionales contribuyeron a que la medición oficial de la inflación fuera `r text1` que sin estacionalidad, `r fg3t[1,2]` por ciento versus `r fg3t[1,3]` por ciento. Este 0.1 punto porcentual adicional en la inflación oficial de `r meses[mes_t,1]` se explica fundamentalmente por el comportamiento del índice de precios de la división prendas de vestir y calzado. Durante los últimos 12 meses, el índice aumentó un `r cuadro1[2,8]` por ciento antes del ajuste estacional (datos oficiales de INDEC). <br>
+
+
+**Durante `r meses[mes_t,1]`, el comportamiento estacional fue dispar. En las regiones de GBA, Pampeana, Cuyo y Noroeste, la estacionalidad hizo que la medición oficial fuera de entre 0.1 y 0.2 puntos porcentuales mayor al índice sin estacionalidad.** En las regiones Noreste y Patagonia la estacionalidad no tuvo impacto registrándose la misma inflación en los datos oficiales y en el IPCse. (Figura 1).<br>
+
+**Los índices de precios de alimentos y bebidas no alcohólicas, y de restaurantes y hoteles fueron, con diferencia, los que más aumentaron en el mes con `r cuadro1[9,7]` y `r cuadro1[19,7]`, respectivamente.** En un segundo escalón estuvieron los incrementos en equipamiento y mantenimiento del hogar y prendas de vestir y calzado. Los índices de precios del resto de las divisiones aumentaron por debajo del nivel general desestacionalizado (Cuadro 1).<br>
+
+**Los índices de precios de bebidas alcohólicas y tabaco y de vivienda, agua, electricidad, gas y otros combustibles son los que menos aumentaron en la medición sin estacionalidad.** Como el factor de estacionalidad de prendas de vestir y calzado es más grande en abril que en marzo el índice oficial del INDEC para esta división dió más alto, 10.8%, que el valor alcanzado por el indicador sin estacionalidad, 8.5% (ver Figura 2). **Esta división, prendas de vestir y calzado, es la que explica casi toda la diferencia entre la medición sin estacionalidad y la medición oficial durante `r meses[mes_t,1]`.**<br>
+
+**La contribución más importante al dato del nivel general del IPCse de `r meses[mes_t,1]` la hizo el índice de precios de la división alimentos y bebidas no alcohólicas explicando alrededor de 36 por ciento del `r cuadro1[2,7]` por ciento de inflación.** Las otras divisiones con incidencias importantes en el aumento del nivel general de precios sin estacionalidad fueron prendas de vestir y calzado que explicó un punto porcentual y restaurantes y hoteles que contribuyó con 0.9 puntos porcentuales. El índice de precios de la división alimentos y bebidas no alcohólicas contribuyó a explicar el 42 y 46 por ciento de la inflación sin estacionalidad en las regiones pampeana y noreste, respectivamente. Además en la región de Cuyo la división de alimentos y bebidas no alcohólicas explicó el 38 por ciento del incremento en el IPCse regional (Cuadro 2).<br>
+
+**En la comparación interanual, `r meses[mes_t,1]` de `r year_t` contra `r meses[mes_t,1]` de `r year_t - 1` antes del ajuste estacional, casi el 60 por ciento del aumento de 108.8 por ciento está explicado por los índices de precios de tres de las divisiones de la canasta: alimentos y bebidas no alcohólicas, prendas de vestir y calzado, y restaurantes y hoteles.**  Transporte con una incidencia interanual de 11.0 puntos porcentuales y Salud con 8.4 puntos porcentuales son las divisiones que le sigue en explicación del aumento interanual del nivel general de precios sin estacionalidad (Cuadro 2).<br> 
+
+**En `r meses[mes_t,1]`, la inflación subyacente, definida como el cambio porcentual en el nivel general del IPCse menos el efecto de los índices de precios de las divisiones de la canasta que incluyen bienes y servicios regulados o con alto componente impositivo, fue de `r cuadro1[21,7]` por ciento después de haber aumentado un `r cuadro1[21,6]` por ciento en marzo.**  El valor de `r meses[mes_t,1]` fue impulsado por las regiones de GBA, Pampeana y Noreste. En términos interanuales la inflación subyacente en las seis regiones ya superó el 110 por ciento en `r meses[mes_t,1]` (Cuadro 1).
+
 
 <br>
 
@@ -85,7 +245,7 @@ yearscuadro1 <- c("",as.character(cuadro1[1,2:7]),"2022/2021")
 
 colnames(cuadro1)[8] <- "  "
 
-# Tengo que automatizar la barrita que dice 
+# Tengo que automatizar la barrita de la linea 208 
 
 cuadro1 %>%   
   slice(-1) %>%
@@ -96,7 +256,7 @@ cuadro1 %>%
   group_rows("Inflación subyacente", 20,26) %>%
   column_spec(column=1:8, extra_css = "vertical- align:middle;") %>%
   kable_styling() %>%
-  add_header_above(c("Año"=1, "2022"=6, "Dic. 2022/Dic. 2021"=1)) %>%
+  add_header_above(c("Año"=1, "2022"=2,"2023"=4, setNames(1,text_mes_yoy))) %>%
   add_header_above(c("IPCse" = 1, "Variación mensual" = 6, "Variación interanual" = 1)) %>%
   add_footnote("Nota: existe una diferencia económicamente no significativa (menos de medio punto porcentual) entre las variaciones interanuales del IPCse y del IPC calculado por INDEC. Debido a esto la última columna del cuadro muestra las variaciones interanuales del IPC oficial.", notation = "symbol")
 ```
@@ -110,21 +270,13 @@ cuadro1 %>%
 <span style="color:#777;font-size:13    .0pt;"> **Figura 1. Tasa de inflación mensual**</span>
 
 ```{r figura1, message=FALSE,echo=FALSE} 
-fg1 <- figura1 %>%
-  mutate_if(is.numeric, ~round(.,1)) %>%
-  rename(Variacion = Dato)
-
-fg1$Region <- fct_relevel(fg1$Region, c("Patagonia", "Cuyo", "Noreste", "Noroeste", "Pampeana" ,"GBA","Nacional"))
-
-g1 <- ggplot(fg1, aes(x=Region, y=Variacion, fill=Serie)) +
-  geom_bar(stat="identity", width = 0.5, position = "dodge") +
+g1d <- ggplot(fg1, aes(x=Region, y=Variacion, fill=Serie)) +
+  geom_bar(stat="identity", width = 0.7, position = "dodge") +
   scale_fill_manual(values=c("#111C7F","#9F2042")) +
-  labs(y = "Variación porcentual",
-       x = "") +
+  labs(y = "Variacion porcentual", x = "") +
+  theme_bw()+
   coord_flip() 
-
-ggplotly(g1)
-
+ggplotly(g1d)
 ```
 
 <br>
@@ -135,33 +287,40 @@ ggplotly(g1)
 
 <span style="color:#777;font-size:13    .0pt;"> **Figura 2. Tasa de inflación mensual en cada división COICOP**</span>
 
-
 ```{r figura2, message=FALSE,echo=FALSE} 
-
-fg2 <- figura2 %>%
-  mutate_if(is.numeric, ~round(.,1)) %>%
-  rename(Variacion = Dato)
-
-fg2$Division <- fct_relevel(fg2$Division,c("Bienes y servicios varios", "Restaurantes y hoteles", "Educación", "Recreación y cultura", "Comunicación", "Transporte", "Salud", "Equipamiento y mantenimiento del hogar", "Vivienda, agua, electricidad, gas y otros combustibles", "Prendas de vestir y calzado", "Bebidas alcohólicas y tabaco", "Alimentos y bebidas no alcohólicas"))
-
-g2 <- ggplot(fg2, aes(x=Division, y=Variacion, fill=Serie)) +
+g2d <- ggplot(fg2, aes(x=Division, y=Variacion, fill=Serie)) +
   geom_bar(stat="identity", width = 0.5, position = "dodge") +
   scale_fill_manual(values=c("#111C7F","#9F2042")) +
   labs(y = "Variación porcentual",
        x = "") +
+  theme_bw() +
   coord_flip() 
 
-ggplotly(g2, height = 800)
-
+ggplotly(g2d)
 ```
 
 <br>
+
+```{r figura3, message=FALSE,echo=FALSE,include=FALSE} 
+
+g3d <- ggplot(data=fg3, aes(x=Fecha, y=Tasa)) +
+  geom_line(
+    aes(
+      x=Fecha,
+      color=Serie
+  ), size=.8) +
+  scale_color_manual(values=c("#111C7F","#9F2042"))+
+  theme_bw() +
+  labs(y="Tasa de inflación mensual", x=" ")
+#ggplotly(g3d, height = 800)
+
+```
+
 
 ---
 
 <br>
 ```{r cuadro2, echo=FALSE, message=FALSE}
-
 colnames2 <- colnames(cuadro2)
 colnames2[1] <- " "  
 colnames(cuadro2) <- colnames2
@@ -172,18 +331,130 @@ cuadro2 %>%
         digits=1, align = c('l',rep('c',times=7))) %>%
   row_spec(c(1,15),bold=TRUE) %>% 
   kable_styling() %>%
-  group_rows("Incidencia con respecto al mismo mes del año anterior", 1,14) %>%
-  group_rows("Incidencia con respecto al mismo mes del año anterior", 15,27) %>%
-  add_footnote("Nota: los ponderadores de los índices de precios de las divisiones para el cálculo de las incidencias del IPC nacional se construyeron como promedio ponderado de las ponderaciones regionales al no existir ponderadores oficiales. Debido a esto, el resultado de la suma de las incidencias da un valor aproximado a la inflación del nivel general.",notation="symbol")
+  group_rows("Incidencia mensual (IPCse)", 1,14) %>%
+  group_rows("Incidencia interanual (INDEC)", 15,27) %>%
+  add_footnote("Nota: los ponderadores de los índices de precios de las divisiones para el cálculo de las incidencias del IPC nacional se construyeron como promedio ponderado de las ponderaciones regionales al no existir ponderadores oficiales. Debido a esto, el resultado de la suma de las incidencias da un valor aproximado a la inflación del nivel general.",notation="symbol")
+
+```
+
+
+### Inflación para hogares de mayores y menores ingresos
+
+**En `r meses[mes_t,1]`, la tasa de inflación mensual que enfrentaron los hogares de menores ingresos fue de `r sprintf("%.1f",cuadro3se[1,3])` por ciento mientras que para los hogares del 20 por ciento de mayores ingresos la inflación fue de `r sprintf("%.1f",cuadro3se[5,3])` por ciento.** Comparando contra el mismo mes del año anterior fue de `r sprintf("%.1f",cuadro3se[1,4])` por ciento para el 20 por ciento con menores ingresos y de `r sprintf("%.1f",cuadro3se[5,4])` por ciento para el quintil de mayores ingresos (Cuadro 3).
+
+**En `r meses[mes_t,1]`, la diferencia entre la tasa de inflación mensual que enfrentaron los hogares de menores ingresos y la de mayores ingresos fue de casi medio punto porcentual.** Esta diferencia se explica casi totalmente por el aumento en el índice de precios de la división de alimentos y bebidas no alcohólicas donde los hogares de menores ingresos (quintil 1) concentran una mayor proporción de su gasto en comparación con la proporción del gasto total que le dedican los hogares de mayores ingresos (quintil 5).      
+
+
+```{r cuadro3, echo=FALSE, message=FALSE}
+cuadro3se %>%   
+  kable(caption="**Cuadro 3. Inflación por quintil de ingresos, sin estacionalidad**", digits=1, col.names = NULL,align = c("r","c","c","c")) %>%
+  add_header_above(c(".", "Quintil", "Mensual", "Interanual")) %>%
+  kable_styling() 
+```
+
+
+
+
+La Figura 3 muestra la diferencia entre la inflación anual experimentada por el 20 por ciento de la población de menores ingresos y el 20 por ciento de mayores ingresos (medido por el ingreso familiar per capita del hogar). **Durante la mayor parte del período que va desde diciembre de 2017 hasta `r meses[mes_t,1]` de 2023, los precios de la división de alimentos y bebidas no alcohólicas, donde la proporción del gasto es mayor para los hogares de menores ingresos aumentaron más rápido que los precios de las divisiones de transporte, educación, recreación y cultura, y restaurantes y hoteles donde la proporción de gasto total es mayor para los hogares de mayores ingresos.** Eso explica que la inflación interanual que enfrentaron los hogares de menores ingresos haya sido mayor que la que enfrentaron los hogares de mayores ingresos. En los últimos 13 meses, desde marzo de 2022, hubo un solo mes, julio de 2022, donde los precios de las divisiones en las que tienen mayor proporción del gasto los hogares de mayores ingresos crecieron a ritmo mayor que los precios de los bienes y servicios de las divisiones donde los hogares de menores ingresos gastan una mayor proporción.
+
+
+<span style="color:#777;font-size:13    .0pt;"> **Figura 3. Diferencia entre la tasa de inflación interanual entre el 20% con menores ingreso y el 20% con mayores ingresos**</span>
+
+
+```{r figura_infla_intearnual_q1q5, echo=FALSE, message=FALSE}
+
+# editar el tooltip 
+
+tooltip_g4 <- paste0("La diferencia entre la tasa de inflación interanual entre el 20% con menores ingresos y el 20% con mayores ingresos es de ")
+
+
+titulog4 <- paste0("Última obsercación: ", meses[mes_t,1], " ", year_t, ".\nLa diferencia en la inflación anual entre los quintiles 1 y 5 fue de ", sprintf("%.1f",figura4$Serie[which.max(figura4$Fecha)]), " puntos porcentuales.")
+
+g4 <- ggplot(data=figura4, aes(x=Fecha,y=Serie)) +
+  ggh4x::stat_difference(aes(ymin = 0, ymax = Serie)) +
+  geom_line(aes(y = Serie)) +
+  labs(fill = "Diferencia", y="Puntos porcentuales", x=" ", title=titulog4) +
+  scale_fill_manual(values=c("#9F2042", "#adcc78"), name="Diferencia") +
+  theme_bw()
+g4
+#ggplotly(g4)
+```
+
+
+<br>
+
+La Figura 4 muestra las diferencias entre las contribuciones a la tasa de inflación interanual de `r meses[mes_t,1]` del 20 por ciento de los hogares de menores y mayores ingresos.  **La división de alimentos y bebidas no alcohólicas contribuyó a incrementar más la inflación para los hogares de menores ingresos en comparación con los hogares de mayores ingresos.** En particular esta división explicó más de 20 puntos porcentuales de diferencia. En comparación, transporte, restaurantes y hoteles y salud, fueron las divisiones que contribuyeron para aumentar más la tasa de inflación que enfrentó el grupo de hogares de mayores ingresos en comparación con los hogares de menores ingresos. Las divisiones de transporte y restaurantes y hoteles contribuyeron a reducir la brecha en la inflación enfrentada por los hogares de menores y mayores ingresos en alrededor de 10 puntos porcentuales.
+
+
+<br> 
+
+<span style="color:#777;font-size:13    .0pt;"> **Figura 4. Diferencia de la incidencia de cada división entre el 20% con menores ingreso y el 20% con mayores ingresos**</span>
+
+
+```{r cuadro4, echo=FALSE, message=FALSE, include=FALSE}
+cuadro_dif_inc_q1q5 %>%   
+  select(1:2) %>%
+  relocate(where(is.numeric), .after = where(is.character)) %>% 
+  slice(13,1:12) %>%
+  kable(caption="**Cuadro 4: Diferencia de la incidencia de la inflación interanual por quintil de ingresos**", digits=2) %>%
+  row_spec(1,bold=TRUE) %>% 
+  kable_styling() 
+```
+
+
+
+```{r figura_infla_q1q5_difinci , echo=FALSE, message=FALSE}
+
+fg4 <- cuadro_dif_inc_q1q5 %>%
+  mutate(Incidencia=fct_reorder(División,Orden)) %>%
+  mutate_if(is.numeric, ~round(.,2)) 
+
+g5 <- ggplot(fg4, aes(x=Incidencia, y=`Diferencia de incidencias`)) +
+  geom_bar(stat="identity", width = 0.5,fill=c("#88b3f7")) +
+  labs(y = "Variación porcentual",
+       x = "") +
+  theme_bw() +
+  coord_flip() 
+ggplotly(g5)
 
 ```
 
 
 <br>
 
+El Cuadro 4 muestra el impacto diferencial de la inflación por quintiles de ingreso per capita familiar para los datos oficiales. **Los hogares de menores ingresos, quintil 1, enfrentaron en marzo una inflación de `r sprintf("%.1f",cuadro4[1,3])` por ciento comparada con una inflación de  `r sprintf("%.1f",cuadro4[5,3])` por ciento para los hogares del 20 por ciento de mayores ingresos.** Los hogares del quintil 1 enfrentaron una inflación de `r sprintf("%.2f",cuadro4[1,3])` por ciento, comparada con una inflación de `r sprintf("%.2f",cuadro4[5,3])` por ciento para el quintil 5 (ver Figura 5). Esta diferencia se debe fundamentalmente al aumento de precios de la división de alimentos y bebidas no alcohólicas que impacta en mayor medida en los hogares de menores ingresos (quintil 1).
+
+
+<br>
+
+```{r cuadro4_indec, echo=FALSE, message=FALSE}
+cuadro4 %>%   
+  kable(caption="**Cuadro 4. Inflación por quintil de ingresos, con estacionalidad**", digits=1, col.names = NULL,align = c("r","c","c","c")) %>%
+  add_header_above(c(".", "Quintil", "Mensual", "Interanual")) %>%
+  kable_styling() 
+```
+
 ---
 
 <br>
+
+<span style="color:#777;font-size:13    .0pt;"> **Figura 5. Tasa de inflación mensual para cada quintil de ingresos**</span>
+
+
+```{r lineplot_quintiles, message=FALSE,echo=FALSE,fig.dim = c(8, 4.5)}
+
+g5 <- ggplot(data=fgqy, aes(x=Fecha, y=Mensual)) +
+  geom_line(
+    aes(
+      x=Fecha,
+      color=Quintil
+  ), linewidth=.8) +
+  scale_color_manual(values=c("#581f4d","#77325f","#923d5b","#c3415b","#dd6868"))+
+  theme_bw() +
+  labs(y="Tasa de inflación mensual", x=" ")
+ggplotly(g5)
+
+```
 
 
 ## NOTA TECNICA
@@ -201,7 +472,7 @@ La inflación subyacente se define como la que se obtiene con el IPCse sin el ef
 
 **¿Cómo se ajustan estacionalmente los índices de precios?** 
 
-El movimiento estacional en el nivel general del índice de precios de cada región del país se elimina desestacionalizando cada uno de los índices de las 12 divisiones de la canasta de bienes y servicios de cada región. Después, estos índices desestacionalizados se agregan utilizando los ponderadores publicado por INDEC para las divisiones en la fecha de referencia del IPC: diciembre de 2016. Las divisiones representan los agrupamientos de la Clasificación del Consumo Individual por Finalidad (Classification of Individual Consumption According to Purpose, COICOP, por sus siglas en inglés) elaborada por la Comisión de Estadísticas de las Naciones Unidas (1999) y adaptada por INDEC en 2019.   
+El movimiento estacional en el nivel general del índice de precios de cada región del país se elimina desestacionalizando cada uno de los índices de las 12 divisiones de la canasta de bienes y servicios de cada región. Después, estos índices desestacionalizados se agregan utilizando los ponderadores publicados por INDEC para las divisiones en la fecha de referencia del IPC: diciembre de 2016. Las divisiones representan los agrupamientos de la Clasificación del Consumo Individual por Finalidad (Classification of Individual Consumption According to Purpose, COICOP, por sus siglas en inglés) elaborada por la Comisión de Estadísticas de las Naciones Unidas (1999) y adaptada por INDEC en 2019.   
 
 Los índices regionales sin estacionalidad construidos de esta manera se agregan para determinar el IPCse nacional. Para la agregación de los índices de precios regionales nuevamente se utilizan los ponderadores del índice en la fecha de referencia: diciembre de 2016.  
 
@@ -217,8 +488,17 @@ Para que un índice de precios de una división pueda desestacionalizarse el se 
 
 Usando estos criterios los índices de precios de las divisiones de la COICOP: alimentos y bebidas no alcohólicas, bebidas alcohólicas y tabaco, prendas de vestir y calzado y educación tienen estacionalidad en las seis regiones del país. Además de estos índices de precios, en la región del GBA, equipamiento y mantenimiento del hogar, transporte, comunicación y recreación y cultura tienen estacionalidad. En la regiones pampeana y noroeste se detecta estacionalidad estable en comunicación y recreación y cultura.  En la región noreste hay estacionalidad en los índices de precios de equipamiento y mantenimiento del hogar, comunicación, recreación y cultura y bienes y servicios varios. En la región de Cuyo se detecta estacionalidad en las series de comunicación, recreación y cultura y restaurantes y hoteles. Finalmente, en la región patagónica las series con estacionalidad son equipamiento y mantenimiento del hogar, salud, recreación y cultura y bienes y servicios varios.  
 
-Se debe notar que siguiendo estos criterios estadísticos ni el CPI-U de Estados Unidos, ni el IPC nacional tienen estacionalidad, pero incluyen índices de precios más desagregados que sí la tienen. Debido a esto el BLS publica el CPI-U desestacionalizado para analizar las variaciones de precios mes a mes. Para el IPCse se utiliza el mismo procedimiento, se incorpora dentro del IPC a las series desestacionalizadas identificando sus factores estacionales de forma tal de poder cuantificar su impacto mensual, presente y futuro.  
+Se debe notar que siguiendo estos criterios estadísticos ni el CPI-U de Estados Unidos, ni el IPC nacional tienen estacionalidad detectable, aún cuando incluyen índices de precios más desagregados que sí la tienen. Debido a esto el BLS publica el CPI-U desestacionalizado para analizar las variaciones de precios mes a mes. Para el IPCse se utiliza el mismo procedimiento, se incorpora dentro del IPC a las series desestacionalizadas identificando sus factores estacionales de forma tal de poder cuantificar su impacto mensual, presente y futuro.  
 
 El no detectar estacionalidad estable en el nivel general del índice implica que los patrones estacionales de las series más desagregadas se compensan en el agregado. Hay algunos índices de precios de las 12 divisiones de la canasta que a pesar de tener estacionalidad estable tienen un patrón estacional con una amplitud moderada o baja como son las series de alimentos y bebidas no alcohólicas y bebidas alcohólicas y tabaco. Otros índices de precios como educación y prendas de vestir y calzado tienen una estacionalidad más marcada, pero tienen una menor ponderación en la construcción del nivel general. En la región del GBA por ejemplo, el patrón de estacionalidad de prendas de vestir y calzado es un espejo del de recreación y cultura (con ponderadores parecidos en el nivel general), los picos estacionales de la primera serie coinciden con los valles en la segunda y viceversa.  
 
 Cada mes de enero, con los datos de los índices hasta diciembre se reevalúa la estacionalidad de cada serie de índices con base en los criterios estadísticos mencionados arriba. Un índice podría cambiar su estado de ajuste estacional de “ajustado estacionalmente” a “no ajustado estacionalmente”, o viceversa. A mediados de febrero de cada año, cuando se publican los datos de inflación de enero, el se publicarán nuevos índices ajustados estacionalmente y los nuevos factores de ajuste estacional para cada división. Estos factores de estacionalidad permanecen constantes durante el resto del año. El método X-11 utilizado para el ajuste estacional produce una serie desestacionalizada diferente con cada dato mensual adicional de forma tal que el IPCse debería actualizarse hacia atrás con cada nuevo dato. Para evitar este ajuste mensual en la desestacionalizada los factores estacionales se mantienen constantes durante un año de forma tal de no cambiar hacia atrás la serie sin estacionalidad. Este es el mismo procedimiento que usa el BLS para la construcción del CPI-U desestacionalizado. Cada mes de enero, como se mencionó arriba se actualizan estos factores estacionales y se reconstruye la serie desestacionalizada hasta 5 años hacia atrás. Los factores estacionales de más de 5 años hacia atrás se consideran definitivos.
+
+
+**¿Cómo se calcula la inflación por quintiles de ingreso?**
+
+La inflación no afecta homogéneamente a todos los hogares del país. Intuitivamente, es lógico pensar que la canasta de consumo de un hogar de ingresos bajos sea diferente a la canasta de consumo de un hogar de ingresos altos, por lo que, si los precios de algunos bienes más consumidos por los hogares de bajos ingresos suben más que los precios de los bienes más consumidos por los hogares de ingresos altos, es esperable que la inflación afecte más a aquellos hogares de bajos ingresos.
+
+¿Cómo se puede trasladar esta idea al cómputo de un índice de precios? En primer lugar, hay que definir qué significa que un hogar sea de ingresos bajos o de ingresos altos.  Para ello, se utiliza el concepto estadístico de _quintiles del ingreso_. Los quintiles del ingreso son cinco grupos de la distribución del ingreso per cápita del hogar, cada uno con un quinto de la población ordenada en función de su ingreso. Es decir, cada quintil posee al 20% de los hogares; por ejemplo, el _quintil 1_ posee al 20% de los hogares que _menores_ ingresos tienen, mientras que el _quintil 5_ posee al 20% de los hogares que _mayores_ ingresos tienen. Luego, se deben computar las "canastas de consumo" que en promedio poseen los hogares de cada quintil. Esto es necesario para obtener la ponderación que se le otorgará a cada precio para cada decil. 
+
+Para todos estos cálculos se utilizaron los datos de la Encuesta Nacional de Gasto de los Hogares en su edición realizada entre octubre de 2017 hasta diciembre de 2018. Utilizando la base de datos de hogares, se calcularon los quintiles del ingreso per cápita del hogar. Teniendo identificado el quintil al que pertenece cada hogar, se calculó, por quintil y región del país, la suma de todos los gastos y la suma de los gastos por cada una de las divisiones de los bienes y servicios que componen la canasta del IPC. Luego se dividió el gasto total en cada división de la canasta por el gasto total. Como los ponderadores del IPC publicado por INDEC no están calculados con la ENGHO 17/18, los ponderadores no coinciden con los utilizados por INDEC. Por este motivo, se reescalaron los ponderadores obtenidos con la ENGHO 17/18 para que permitan replicar los valores del IPC de INDEC. Con estos ponderadores, se calcula el índice de precios para cada quintil y la tasa de inflación mensual e interanual para cada grupo.
